@@ -199,7 +199,7 @@ def sdh_prompt_guevara(note_text):
     1. Analyse the text and determine whether any of the following six Social Determinants of Health (SDOH) are explicitly stated based on the definitions below.  
     2. For each SDOH, select exactly one label from the bracketed list.  
        • If the note contains none of the listed concepts for that SDOH, choose “unknown”.  
-       • Do NOT invent new labels, combine labels, or add explanations.  
+       • Do NOT invent new labels, do NOT combine labels, do NOT add explanations.  
     3. Return your answer only as a JSON object with six keys (one per SDOH) and values equal to the chosen label.  
        - Do not include any additional text or commentary.
     
@@ -213,17 +213,18 @@ def sdh_prompt_guevara(note_text):
     
     OUTPUT TEMPLATE (use exactly this format)
     
-      "Employment status": "…",
-      "Housing issues": "…",
-      "Transportation issues": "…",
-      "Parental status": "…",
-      "Relationship status": "…",
-      "Social support": "…"
-    
+      "Employment status": "[label]",
+      "Housing issues": "[label]",
+      "Transportation issues": "[label]",
+      "Parental status": "[label]",
+      "Relationship status": "[label]",
+      "Social support": "[label]"
+
+    Use the following example to guide your response:
     Text sample: ```38 y/o F, single mother of 2 (4 y/o and 6 y/o), h/o HTN and anxiety presents with medication nonadherence due to unstable PT barista job (~20 h/wk) and unreliable public transport causing missed appts and work shifts. Reports 2 mo rent arrears, late-payment notice pending eviction. No personal vehicle, bus cuts limit mobility. Ex-spouse provides no support; sister OOS; one friend for occasional childcare. Limited social support. Plan: continue lisinopril 10 mg daily, add SSRI; refer to housing assistance, workforce development, bus-pass voucher, subsidized childcare, social work, and food pantry.
     ```
     
-    YOUR JSON RESPONSE:
+    GOOD RESPONSE:
     
       "Employment status": "employed",
       "Housing issues": "other",
@@ -231,7 +232,11 @@ def sdh_prompt_guevara(note_text):
       "Parental status": "yes",
       "Relationship status": "divorced",
       "Social support": "absence"
-    
+
+    WHY IS A GOOD RESPONSE?
+    - It accurately identifies the SDOH categories present in the clinical note and assigns the appropriate labels based on the definitions provided.
+    - It avoids unnecessary detail and complexity, making it easy to understand the key information about the patient's social determinants of health.
+
     ---
     Now analyze the following clinical note:
     
@@ -407,6 +412,94 @@ def sdh_prompt_guevara_v2(note_text):
     {note_text}
     \"\"\"
     """
+
+def sdh_prompt_guevara_v3(note_text):
+    return f"""
+    You are an NLP expert assistant. Your task is to extract structured information about Social Determinants of Health (SDOH) from clinical notes. 
+    
+    INPUT INFORMATION:
+    1. Clinical note text, delimited by triple backticks.
+    2. Six SDOH categories with their definitions and labels.
+    3. Examples of annotated notes with expected JSON outputs.
+    
+    TASK:
+    1. Analyze the provided clinical note.
+    2. For each of the six SDOH categories, select exactly one label from the provided list.
+    3. Always return a valid JSON object following the schema below.
+    4. Use only the listed labels. If the information is not present, select "unknown".
+    
+    CATEGORIES & LABELS:
+    1. Employment status: [employed, unemployed, underemployed, disability, retired, student, unknown]
+    2. Housing issues: [financial status, undomiciled, other, unknown]
+    3. Transportation issues: [distance, resources, other, unknown]
+    4. Parental status: [yes, no, unknown]
+    5. Relationship status: [married, partnered, widowed, divorced, single, unknown]
+    6. Social support: [presence, absence, unknown]
+    
+    OUTPUT SCHEMA (always valid JSON, no extra text):
+    [
+      "Employment status": "[label]",
+      "Housing issues": "[label]",
+      "Transportation issues": "[label]",
+      "Parental status": "[label]",
+      "Relationship status": "[label]",
+      "Social support": "[label]"
+    ]
+
+    EXAMPLES:
+    Example 1
+    Text: ```38 y/o F, single mother of 2 (4 y/o and 6 y/o), h/o HTN and anxiety presents with medication nonadherence due to unstable PT barista job (~20 h/wk) and unreliable public transport causing missed appts and work shifts. Reports 2 mo rent arrears, late-payment notice pending eviction. No personal vehicle, bus cuts limit mobility. Ex-spouse provides no support; sister OOS; one friend for occasional childcare. Limited social support.```
+    Output:
+    [
+      "Employment status": "employed",
+      "Housing issues": "other",
+      "Transportation issues": "other",
+      "Parental status": "yes",
+      "Relationship status": "divorced",
+      "Social support": "absence"
+    ]
+
+    Example 2 (edge case: all unknown)
+    Text: ```Patient presents for routine physical. No mention of social history.```
+    Output:
+    [
+      "Employment status": "unknown",
+      "Housing issues": "unknown",
+      "Transportation issues": "unknown",
+      "Parental status": "unknown",
+      "Relationship status": "unknown",
+      "Social support": "unknown"
+    ]
+
+    Example 3 (student with support)
+    Text: ```19 y/o college student living in dorms, no children, partnered, parents provide emotional and financial support. No transport or housing issues reported.```
+    Output:
+    [
+      "Employment status": "student",
+      "Housing issues": "unknown",
+      "Transportation issues": "unknown",
+      "Parental status": "no",
+      "Relationship status": "partnered",
+      "Social support": "presence"
+    ]
+
+    Example 4 (retired, widowed, strong social support)
+    Text: ```72 y/o M, retired teacher, widowed, lives independently with strong support from adult children and church community. No housing or transport concerns.``` 
+    Output:
+    [
+      "Employment status": "retired",
+      "Housing issues": "unknown",
+      "Transportation issues": "unknown",
+      "Parental status": "unknown",
+      "Relationship status": "widowed",
+      "Social support": "presence"]
+
+    ---
+    Now analyze the following clinical note:
+
+    ```{note_text}```
+    """
+
 
 def sdh_single_prompt(note_text: str, sdoh: str, sdoh_def: str) -> str:
     return f"""
