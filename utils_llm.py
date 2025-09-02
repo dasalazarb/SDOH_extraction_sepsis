@@ -9,12 +9,12 @@ def get_clinical_notes_mimic3(pairs):
         user="postgres",
         password="aasalazarda",
         host="localhost",
-        port="5432"
+        port="5433"
     )
     cur = conn.cursor()
     query = """
         SELECT n.subject_id, n.hadm_id, n.row_id, n.charttime, n.text
-          FROM public.noteevents AS n
+          FROM mimiciii.noteevents AS n
          WHERE (n.subject_id, n.row_id) IN %s;
     """
     cur.execute(query, (tuple(pairs),))
@@ -35,7 +35,7 @@ def get_notes_for_first_n_patients(n=10):
         user="postgres",
         password="aasalazarda",
         host="localhost",
-        port="5432"
+        port="5433"
     )
     cur = conn.cursor()
     query = f"""
@@ -60,7 +60,7 @@ def get_notes_for_first_n_notes(n=10):
         user="postgres",
         password="aasalazarda",
         host="localhost",
-        port="5432"
+        port="5433"
     )
     cur = conn.cursor()
     query = f"""
@@ -86,7 +86,7 @@ def get_patients(limit=10):
         user="postgres",
         password="aasalazarda",
         host="localhost",
-        port="5432"
+        port="5433"
     )
     cur = conn.cursor()
     query = f"""
@@ -363,6 +363,7 @@ def sdh_prompt_guevara_v2(note_text):
        • Do NOT invent new labels, combine labels, or add explanations.  
     3. Return your answer only as a JSON object with six keys (one per SDOH) and values equal to the chosen label.  
        - Do not include any additional text or commentary.
+       - Do not include your rational.
         
     List of SDOH categories and their definitions:
     1. Employment status: whether the patient is currently employed, unemployed (e.g., out of work, jobless, laid-off), underemployed (e.g., part-time work, low pay), has a disability that prevents working (e.g., physical or mental health condition, receiving disability benefits), retired (e.g., inactive, pensioner), or is a student (e.g., enrolled in school, college, or university). Unknown if the clinical note does not mention the patient’s employment status.
@@ -467,7 +468,7 @@ def sdh_prompt_for_t5(note_text):
 
 
 def save_to_jsonl(data_list, model_id, timestamp):
-    filename=f"I:/outputs/sdoh_outputs_{model_id.replace('I:/', '')}_{timestamp}.jsonl"
+    filename=f"/data/salazarda/data/sdoh/outputs/sdoh_outputs_{model_id.replace('/data/salazarda/data/models/', '')}_{timestamp}.jsonl"
     with open(filename, "w", encoding="utf-8") as f:
         for entry in data_list:
             f.write(json.dumps(entry) + "\n")
